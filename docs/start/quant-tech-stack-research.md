@@ -1,10 +1,10 @@
 # Quant-Focused Technology Stack Research
 
-*Research date: October 6, 2026 | Decision: Rust | Confidence: high*
+*Research date: October 6, 2026 | Decision: C++23 | Confidence: high*
 
 ## Executive decision
 
-Use **Rust 2024 on Linux** for the complete assessed system.
+Use **C++23 on Linux** for the complete assessed system.
 
 The goal is not to imitate one firm's private production stack. The goal is to
 produce a polished artifact demonstrating abilities that transfer across
@@ -12,37 +12,43 @@ quantitative trading firms:
 
 - deterministic execution;
 - distributed consensus and failure recovery;
-- memory-safe, race-resistant systems programming;
+- performance-sensitive systems programming with explicit ownership, memory
+  layout, and concurrency control;
 - explicit durability and retry semantics;
 - adversarial and reproducible testing;
 - mechanical sympathy backed by measurements;
 - clear communication of safety, liveness, and latency tradeoffs.
 
-Rust fits this project because its hardest problems are protocol state,
-concurrency, persistence, and deterministic recovery—not an exchange gateway's
-final nanoseconds. Rust provides low-level control without a garbage collector
-while preventing broad classes of memory and data-race bugs. That increases the
-chance of completing the consensus experiment, simulator, recovery logic, and
-performance study within one semester.
+C++23 is the strongest fit for the project's recruiting objective. Public roles
+at Optiver, Citadel, Citadel Securities, and Jump directly connect modern C++ to
+market data, execution, simulation, distributed systems, and low-latency
+infrastructure. C++ also makes memory layout, allocation, cache behavior,
+atomics, buffer ownership, and operating-system interactions visible engineering
+decisions rather than hidden implementation details.
 
 The intended result is:
 
-> A memory-safe, crash-consistent Raft-replicated matching engine with
-> deterministic failure simulation, machine-checked invariants, reproducible
-> fault histories, and a rigorous analysis of consensus and failover costs.
+> A crash-consistent C++23 Raft-replicated matching engine with deterministic
+> failure simulation, machine-checked invariants, reproducible fault histories,
+> and a rigorous analysis of consensus and failover costs.
+
+The implementation risk is higher than in a memory-safe systems language. The
+project controls that risk through RAII, value semantics, single-owner event
+loops, narrow interfaces, compiler warnings, static analysis, sanitizers,
+fuzzing, and deterministic simulation.
 
 ## Industry evidence
 
 ### Jump Trading
 
-Jump's public technology page explicitly lists high-performance frameworks in
-Rust, C++, Python, and Go. It also highlights distributed systems, simulation,
-custom hardware, proprietary networking, and large research infrastructure.
-This is strong first-party evidence that Rust is relevant to modern trading
-infrastructure, without implying that it replaces C++ everywhere.
+Jump's public technology page lists high-performance frameworks in C++, Rust,
+Python, and Go, alongside distributed systems, simulation, custom hardware,
+proprietary networking, and large research infrastructure. Its public C++
+trading role emphasizes execution algorithms, resource efficiency, hardware
+optimization, and comprehensive testing.
 
-**Project signal:** safe high-performance systems work, simulation, distributed
-correctness, networking, and measurement.
+**Project signal:** high-performance C++, distributed-systems architecture,
+simulation, hardware awareness, and evidence-driven testing.
 
 Sources:
 
@@ -51,19 +57,19 @@ Sources:
 
 ### Jane Street
 
-Jane Street is primarily an OCaml organization, so copying a C++ stack would not
-match it either. Its engineering material emphasizes strong types, determinism,
-replay, reliable state machines, tail latency, allocation behavior, cache
-effects, and careful measurement.
+Jane Street is primarily an OCaml organization, so the goal is not to copy its
+language stack. Its engineering material instead emphasizes transferable
+systems skills: deterministic state machines, replay-based recovery, reliable
+replication, low-allocation data paths, cache behavior, hardware counters, tail
+latency, and jitter analysis.
 
-The “How to Build an Exchange” talk is especially relevant: it discusses
+The “How to Build an Exchange” talk is especially relevant because it discusses
 deterministic response, replay-based recovery, replicated state, low-allocation
-design, and consensus latency. Jane Street's programming-language work also
-discusses Rust-style ownership and data-race freedom as valuable high-performance
-language capabilities.
+design, and the latency cost of consensus. Its performance talks reinforce that
+the compelling signal is disciplined measurement rather than a language label.
 
-**Project signal:** use Rust's type system thoughtfully, make nondeterminism
-explicit, and measure rather than merely claim performance.
+**Project signal:** make nondeterminism explicit, reason precisely about state,
+and validate every performance claim with reproducible measurements.
 
 Sources:
 
@@ -71,36 +77,35 @@ Sources:
 - [How to Build an Exchange](https://www.janestreet.com/tech-talks/building-an-exchange/)
 - [System Jitter and Where to Find It](https://www.janestreet.com/tech-talks/system-jitter-and-where-to-find-it/)
 - [Safe at Any Speed](https://www.janestreet.com/tech-talks/safe-at-any-speed/)
-- [Making OCaml Safe for Performance Engineering](https://www.janestreet.com/tech-talks/making-ocaml-safe-for-performance-engineering/)
 
 ### Optiver
 
-Optiver's public low-latency roles strongly feature C++, but its broader systems
-roles also recognize Rust. More important here, Optiver repeatedly signals
-deterministic real-time behavior, distributed-systems fundamentals, reliability,
-market-data processing, execution logic, simulation, Linux, networking, and
-observability.
+Optiver's public engineering roles directly connect modern C++ with globally
+distributed, low-latency trading systems, deterministic real-time behavior,
+market-data ingestion, execution logic, simulation, Linux, networking,
+reliability, and observability.
 
-**Project signal:** connect Rust to exchange-style domain modeling and produce
-observable, deterministic, performance-conscious behavior.
+**Project signal:** use modern C++ to demonstrate exchange-style domain
+modeling, deterministic execution, Linux systems programming, observability, and
+evidence-driven latency optimization.
 
 Sources:
 
 - [Algorithmic Trading C++ Engineer](https://www.optiver.com/join-us/jobs/technology/sydney/algorithmic-trading-c-plus-plus-engineer-equities/)
-- [Senior Production Software Engineer](https://www.optiver.com/join-us/jobs/technology/chicago/senior-production-software-engineer/)
+- [Senior C++ Software Engineer, Critical Engineering](https://www.optiver.com/join-us/jobs/technology/sydney/senior-c-plus-plus-software-engineer-critical-engineering/)
 - [Software Engineer, Equities and ETFs](https://www.optiver.com/join-us/jobs/technology/new-york/software-engineer-equities-etfs/)
 
 ### Citadel and Citadel Securities
 
-Citadel's public execution roles strongly favor modern C++, but the underlying
-requirements are broader: concurrency, distributed systems, reliability,
-fail-safe behavior, testing, real-time data, simulation, and measurable
-performance. A serious Rust implementation can demonstrate those capabilities
-even when the target team uses C++.
+Citadel says modern C++ is central to its systematic-investing platform,
+including real-time data ingestion, analytics, forecasting, and execution.
+Citadel Securities roles similarly emphasize C++, multithreading, distributed
+systems, latency, reliability, throughput, exchange simulation, and
+order-management workflows.
 
-**Project signal:** show command of systems fundamentals and performance rather
-than relying on Rust as a substitute for understanding memory layout, CPU caches,
-networking, or durability.
+**Project signal:** demonstrate production-quality C++, concurrency discipline,
+fault-injection testing, measurable performance, and explicit reasoning about
+memory, CPU caches, networking, and durability.
 
 Sources:
 
@@ -109,51 +114,57 @@ Sources:
 - [Citadel Securities C++ Software Engineer](https://www.citadelsecurities.com/careers/details/c-software-engineer-2/)
 - [Citadel Securities SDET](https://www.citadelsecurities.com/careers/details/software-engineer-in-test-sdet/)
 
-## Why Rust over C++ for this project
+## Why C++23 for this project
 
-| Project need | Rust advantage |
+| Project need | C++23 advantage |
 |---|---|
-| Dynamic protocol state | Enums and exhaustive `match` expressions make transitions and missing cases explicit. |
-| Concurrent RPC processing | Ownership plus `Send`/`Sync` eliminates broad classes of unsafe sharing and data races. |
-| Durable buffers and messages | Lifetimes prevent many use-after-free and asynchronous callback errors. |
-| Error handling | `Result` makes transport, decoding, storage, and recovery failures part of the API. |
-| Deterministic domain model | Newtypes and algebraic data types prevent accidental mixing of prices, quantities, IDs, and commands. |
-| Testing | `proptest`, Loom, fuzzing, and deterministic simulation provide a strong correctness story. |
-| Build reproducibility | Cargo workspaces, locked dependencies, formatting, linting, testing, and documentation are integrated. |
-| Semester risk | Fewer memory-corruption and undefined-behavior failures leave more time for the actual experiment. |
+| Quant recruiting alignment | Direct match to current execution and low-latency roles at several target firms. |
+| Memory control | Explicit layout, lifetime, allocation, and ownership decisions. |
+| Hardware awareness | Mature support for cache, branch, SIMD, atomics, and hardware-counter analysis. |
+| Networking | Boost.Asio exposes buffers, event loops, timers, and asynchronous I/O directly. |
+| Domain modeling | Strong wrapper structs, `enum class`, `std::variant`, concepts, and value semantics. |
+| Error handling | `std::expected` supports explicit failure paths without requiring exceptions in core logic. |
+| Verification | Sanitizers, fuzzing, deterministic simulation, property tests, and TLA+. |
+| Performance tooling | Google Benchmark, Linux `perf`, flamegraphs, compiler reports, and mature profilers. |
 
-C++ remains more common in public low-latency execution roles. The project
-should acknowledge that rather than claiming Rust has displaced it. This choice
-is based on project fit and differentiation: Rust makes it more feasible to
-deliver a deep distributed-systems artifact instead of spending the semester
-debugging memory lifetime and build-system problems.
+C++ does not provide compile-time memory and data-race safety. The design must
+therefore minimize shared mutable state and make ownership visible. One logical
+event loop owns each node's Raft state; network and storage adapters exchange
+typed values and effects rather than exposing internal references.
 
-Do not split the core between Rust and C++. Python may be used off the
-correctness path for workload generation, statistical analysis, and plotting.
+Use one implementation language for the assessed system. Python may be used off
+the correctness path for workload generation, statistical analysis, and plots.
 
-## Recommended Rust stack
+## Recommended C++23 stack
 
 ### Language and build
 
-- **Stable Rust, edition 2024**.
-- A Cargo workspace with small crates and a committed `Cargo.lock`.
-- `rustfmt`, Clippy with warnings denied in CI, and `cargo doc`.
+- **C++23**, using value semantics, RAII, `std::span`, `std::variant`,
+  `std::expected`, and concepts where they clarify contracts.
+- **Clang** as the primary compiler and GCC as a compatibility build.
+- **CMake presets + Ninja** for repeatable debug, sanitizer, release, and
+  benchmark configurations.
+- **Conan 2 or vcpkg**, selecting exactly one dependency manager.
+- `clang-format`, `clang-tidy`, and strict compiler warnings in CI.
 - Linux as the benchmark and deployment target; macOS may be used for ordinary
   development.
-- Release profiles recorded with every benchmark. Treat LTO, target-specific CPU
-  flags, and alternative allocators as separately measured configurations.
+- Compiler version, standard-library version, optimization flags, LTO state, and
+  target CPU recorded with every benchmark.
 
 ### Runtime and networking
 
-- **Tokio** for the production runtime, TCP, timers, signals, and tasks.
-- **Tonic + Prost/Protocol Buffers** for the initial typed RPC schema.
-- `bytes` for bounded byte buffers and framing.
-- `tower` middleware only for explicit timeout, limit, or observability policy.
-- `tracing` and `tracing-subscriber` for structured event timelines.
+- **Boost.Asio** for the production event loop, TCP, timers, signals, and
+  asynchronous operations.
+- **Protocol Buffers** for versioned peer and client message schemas.
+- Explicit length-prefixed TCP framing with bounded message sizes.
+- `std::span<std::byte>`, `std::vector<std::byte>`, and Asio buffer sequences for
+  explicit buffer views and ownership.
+- spdlog or a small structured `fmt`-based logger for event timelines.
 
-Keep Tokio outside the consensus and matching cores. Those cores should not be
-`async`, read clocks, open sockets, or perform disk I/O. The runtime translates
-external events into explicit inputs and executes returned effects.
+Keep Boost.Asio outside the consensus and matching cores. Those cores must not
+open sockets, sleep, read wall-clock time, or perform disk I/O. The production
+adapter translates external events into explicit inputs and executes returned
+effects.
 
 ### Consensus
 
@@ -170,20 +181,23 @@ external events into explicit inputs and executes returned effects.
     + committed_entries_to_apply
 ```
 
-- Represent the dynamic role with an enum rather than an elaborate generic
-  type-state hierarchy:
+- Represent dynamic role state with `std::variant`:
 
-```rust
-enum Role {
-    Follower,
-    Candidate(CandidateState),
-    Leader(LeaderState),
-}
+```cpp
+using Role = std::variant<
+    FollowerState,
+    CandidateState,
+    LeaderState
+>;
 ```
 
-- Use [`raft-rs`](https://github.com/tikv/raft-rs) and
-  [OpenRaft](https://docs.rs/openraft/latest/openraft/) as references or optional
-  comparisons, not substitutes for the assessed Raft core.
+- Use strong wrapper structs for `Term`, `LogIndex`, `NodeId`, `ClientId`, and
+  request sequences so unrelated integers cannot be mixed accidentally.
+- Use `std::variant` for input events and output effects, `std::visit` for
+  dispatch, and `std::expected` for recoverable boundary errors.
+- Use [eBay NuRaft](https://github.com/eBay/NuRaft) only as a reference or
+  optional comparison implementation, not as a substitute for the assessed
+  Raft core.
 - Exclude membership changes, leases, pre-vote, leadership transfer, and
   optimized reads from the MVP.
 
@@ -195,55 +209,63 @@ enum Role {
 (application_state, committed_command) -> new_state + deterministic_events
 ```
 
-- Newtypes for `PriceTicks`, `QuantityLots`, `OrderId`, `ClientId`, and sequence
-  numbers.
-- Integer ticks and lots; no floating point in replicated state transitions.
+- Strong wrapper types for `PriceTicks`, `QuantityLots`, `OrderId`, `ClientId`,
+  and sequence numbers.
+- Integer ticks and lots; no floating point in replicated transitions.
 - Limit orders with explicit price-time priority for the MVP.
 - Ordering based on committed log index plus an intra-entry ordinal.
-- Ordered collections or explicit sorting wherever iteration affects output.
+- Ordered containers or explicit sorting wherever iteration affects output.
 - Checked or widened arithmetic with a documented overflow policy.
 - Replicated deduplication keyed by `(client_id, request_sequence)`.
-- No wall clock, randomness, locale, node identity, pointer address, or async
-  work inside `apply()`.
+- No wall clock, randomness, locale, node identity, pointer address, unordered
+  iteration, or asynchronous work inside `apply()`.
+
+Begin with standard containers and measured correctness. Preallocated arenas,
+intrusive structures, custom allocators, and lock-free queues are optional
+optimizations only after profiling identifies a bottleneck.
 
 ### Persistence
 
 - A project-owned append-only WAL using ordinary file I/O first.
 - Record layout: magic, schema version, length, term, index, payload, and CRC32C.
-- Explicit short-write, interruption, partial-tail, checksum, truncation, and
-  restart handling.
-- Defined synchronization and acknowledgment contract.
+- An RAII file-descriptor wrapper plus explicit handling of short writes,
+  interruption, partial tails, checksum failures, truncation, and restart.
+- A defined synchronization and acknowledgment contract.
 - Durable `current_term`, `voted_for`, and log entries before protocol responses
   whose correctness depends on them.
-- Snapshots only after log recovery works. A snapshot includes its last included
-  term/index, application state, deduplication state, and canonical digest.
+- Snapshots only after log recovery works. Each snapshot includes its last
+  included term/index, application state, deduplication state, and canonical
+  digest.
 - Named failpoints before and after append, sync, truncate, snapshot rename,
   apply, and client response.
+- Byte-wise canonical encoding; never write raw C++ structs, padding bytes,
+  pointers, or ABI-dependent layouts to disk.
 
-Do not begin with memory-mapped persistence. `memmap2` and `io_uring` are valid
-post-MVP experiments, but neither automatically provides correct durability.
+Do not begin with memory-mapped persistence. POSIX `mmap` and `io_uring` are
+valid post-MVP experiments, but neither automatically provides correct
+durability.
 
 ### Testing and verification
 
-- Built-in Rust unit and integration tests.
-- [`proptest`](https://github.com/proptest-rs/proptest) for generated and shrunk
-  commands, invariants, and failure histories.
-- `cargo-fuzz`/libFuzzer for decoders, WAL recovery, and malformed frames.
-- [Loom](https://docs.rs/loom/latest/loom/) for small shared-memory adapters,
-  with its model limitations documented.
-- Miri where supported for unsafe-code and undefined-behavior checks.
+- **GoogleTest/GoogleMock** for unit and component tests.
+- **RapidCheck** for generated and minimized command sequences and invariants.
+- **Clang libFuzzer** for decoders, WAL recovery, and malformed frames.
+- Separate **AddressSanitizer**, **UndefinedBehaviorSanitizer**, and
+  **ThreadSanitizer** CI configurations.
+- **clang-tidy** for static analysis and policy enforcement.
 - A seeded deterministic simulator with virtual time, stable event ordering,
   simulated network/disk, and crash/restart controls.
 - A small **TLA+/PlusCal** model checked by TLC for election safety, log matching,
   leader completeness/state-machine safety, and client deduplication.
 
-Every failure must print a replayable seed and fault history. Prefer no `unsafe`
-in the protocol and domain cores. If an optimized adapter eventually uses
-`unsafe`, isolate it, document its invariants, and test it independently.
+Every failure must print a replayable seed and fault history. Prefer value types,
+RAII, standard containers, and explicit ownership. Raw pointers, manual memory
+management, custom allocators, and lock-free structures require measured
+justification, documented invariants, and isolated tests.
 
 ### Performance engineering
 
-- **Criterion.rs** for matcher, codec, hashing, and WAL microbenchmarks.
+- **Google Benchmark** for matcher, codec, hashing, and WAL microbenchmarks.
 - **HdrHistogram** for end-to-end p50/p95/p99/p99.9/max distributions.
 - Linux `perf`, flamegraphs, and hardware counters.
 - Allocation instrumentation for allocations per command.
@@ -251,64 +273,75 @@ in the protocol and domain cores. If an optimized adapter eventually uses
 - An open-loop load generator to avoid hiding overload through coordinated
   omission.
 
-Avoid “zero allocation,” “lock-free,” “zero copy,” and “nanosecond latency” as
-design slogans. Establish a correct baseline, profile it, optimize one measured
+Do not present sanitizer-build timings as release performance. Avoid “zero
+allocation,” “lock-free,” “zero copy,” and “nanosecond latency” as design
+slogans. Establish a correct baseline, profile it, optimize one measured
 bottleneck, and publish the before/after result and its tradeoff.
 
 ### Observability and artifacts
 
-- Structured `tracing` events with node, term, role, peer, log index, commit
-  index, applied index, and stable request ID.
-- Prometheus-format counters and histograms; OpenTelemetry is optional.
+- Structured spdlog or `fmt` events with node, term, role, peer, log index,
+  commit index, applied index, and stable request ID.
+- Prometheus-format counters and histograms through prometheus-cpp;
+  OpenTelemetry C++ export is optional.
 - A terminal dashboard showing nodes, leader changes, replication lag, and state
   digests.
 - JSON/CSV experiment artifacts and scripts or notebooks for plots.
-- GitHub Actions checks for format, Clippy, tests, deterministic scenarios,
-  fuzz smoke tests, model checking, documentation, and benchmark compilation.
+- GitHub Actions checks for formatting, Clang/GCC builds, clang-tidy, unit and
+  property tests, sanitizer jobs, fuzz smoke tests, deterministic scenarios,
+  model checking, documentation, and benchmark compilation.
 
 ## Architecture
 
 ```text
 bounded trace -> strategy/client -> leader gateway
-                                  -> Tokio/Tonic adapter
+                                  -> Boost.Asio/Protobuf adapter
                                   -> pure Raft transition core
                                      -> WAL and peer effects
                                      -> committed command stream
                                         -> pure matching/portfolio state
 
 seeded simulator -> virtual clock/network/disk/process lifecycle
-production shell -> Tokio clock/TCP/files/process lifecycle
+production shell -> Boost.Asio clock/TCP + POSIX files/process lifecycle
 
 both environments execute the same protocol and application cores
 ```
 
-Suggested workspace:
+Suggested project layout:
 
 ```text
-crates/
-  domain/       strongly typed commands, results, IDs, and quantities
-  matching/     pure order book, fills, portfolio, and invariants
-  raft/         pure Raft state, inputs, transitions, and effects
-  storage/      WAL, hard state, checksums, snapshots, and recovery
-  transport/    Tonic/Prost service and peer adapters
-  node/         production runtime wiring
-  client/       retry, leader discovery, idempotency, and trace replay
-  simulator/    virtual time, network, storage, crashes, and seeds
-  benchmarks/   microbenchmarks and open-loop cluster driver
-spec/
-  tla/          model, configuration, invariants, and checked output
-experiments/    scenarios, raw results, metadata, and plots
+include/
+  domain/
+  matching/
+  raft/
+  storage/
+  transport/
+src/
+  domain/
+  matching/
+  raft/
+  storage/
+  transport/
+  node/
+  client/
+  simulator/
+tests/
+benchmarks/
+proto/
+spec/tla/
+experiments/
 ```
 
-Use one logical owner/event loop for each node's mutable Raft state. Channels
-carry immutable inputs and effects rather than expose consensus internals.
+Each major component should be its own CMake target. One logical event loop owns
+each node's mutable Raft state. Queues carry immutable inputs and effects rather
+than expose consensus internals through shared references.
 
 ## Correctness experiment
 
 At each applied index, compute canonical component digests for the committed
 command prefix, orders, fills, portfolios, and client deduplication results.
 Canonical encoding must sort keys and encode logical fields explicitly; never
-hash raw memory, padding, addresses, or incidental map order.
+hash raw memory, padding, addresses, or incidental container order.
 
 Required scenarios:
 
@@ -349,65 +382,73 @@ Report throughput and saturation; p50/p95/p99/p99.9/max latency; matcher time an
 allocations; cycles, instructions, branch and LLC misses; serialization cost;
 WAL sync distribution; failover interruption; and recovery/catch-up time.
 
-Commit raw results, code revision, workload seed, hardware, kernel, Rust version,
-compiler flags, warm-up policy, run count, and confidence intervals. Treat
-outliers as observations to explain rather than silently discard.
+Commit raw results, code revision, workload seed, hardware, kernel, compiler and
+standard-library versions, compiler flags, warm-up policy, run count, and
+confidence intervals. Treat outliers as observations to explain rather than
+silently discard.
 
 ## High-value extensions
 
 Only after the correctness matrix passes:
 
-1. Preallocated slab or arena for orders, measured against the baseline.
+1. Preallocated slab or `std::pmr` arena for orders, measured against the
+   standard-container baseline.
 2. Bounded SPSC channel if profiling shows contention or scheduler interference.
-3. FlatBuffers or `rkyv`, with validation and compatibility analysis.
+3. FlatBuffers, Cap'n Proto, or a custom validated binary codec, with schema and
+   compatibility analysis.
 4. Memory-mapped or `io_uring` WAL with explicit crash tests.
 5. Core pinning and cache-line layout experiments with hardware-counter evidence.
-6. An OpenRaft- or `raft-rs`-backed comparison implementation.
+6. A NuRaft-backed comparison implementation and differential end-state tests.
 
 Do not add DPDK, RDMA, FPGA work, Kubernetes, Kafka, or a polished web dashboard
 until the core safety and measurement objectives are complete.
 
 ## Delivery sequence
 
-1. Rust ownership, enums, errors, traits, concurrency, and async boundaries.
+1. C++23 ownership, RAII, value/move semantics, variants, error handling,
+   concurrency, atomics, the memory model, and Asio lifetime rules.
 2. Pure domain and matching state machine with golden/property tests.
 3. Pure in-memory Raft core with deterministic unit scenarios.
 4. Seeded simulator using the same Raft core.
 5. Committed application, canonical digests, and client deduplication.
 6. Checksummed WAL, restart replay, and storage failpoints.
-7. Tokio/Tonic production adapter and real three-process cluster.
-8. Fuzzing, Loom checks, TLA+ model, and full failure matrix.
+7. Boost.Asio/Protocol Buffers production adapter and real three-process cluster.
+8. Sanitizer, fuzzing, static-analysis, TLA+ model, and full failure matrix.
 9. Performance baselines, raw artifacts, charts, and demo.
 10. One measured extension if schedule permits.
 
 ## Resume-worthy outcome
 
-> Built a Rust three-node Raft-replicated limit-order-book simulator with a
-> crash-consistent checksummed WAL, replicated request deduplication, and pure
+> Built a C++23 three-node Raft-replicated limit-order-book simulator with a
+> crash-consistent checksummed WAL, replicated request deduplication, and
 > deterministic consensus and matching cores. Model-checked safety invariants in
 > TLA+, reproduced crash and partition histories in a seeded simulator, and
 > quantified consensus and failover costs using open-loop load generation, HDR
-> histograms, and Linux hardware counters.
+> histograms, sanitizers, and Linux hardware counters.
 
 Add measured numbers only after the experiments exist.
 
 ## Evidence limits and primary references
 
 Public job descriptions and talks show recruiting and communication priorities,
-not complete private production stacks. The Rust decision is an engineering
-judgment based on this project's distributed-systems scope and semester
-constraints—not a claim that Rust dominates every target firm.
+not complete private production stacks. The C++23 decision is an engineering
+judgment based on this project's low-latency, distributed-systems, and recruiting
+objectives, not a claim that every target team uses the same stack.
 
 - [Raft paper and resources](https://raft.github.io/)
-- [The Rust Programming Language](https://doc.rust-lang.org/book/)
-- [Tokio documentation](https://tokio.rs/)
-- [Tonic](https://github.com/hyperium/tonic)
-- [Prost](https://github.com/tokio-rs/prost)
-- [`raft-rs`](https://github.com/tikv/raft-rs)
-- [OpenRaft](https://docs.rs/openraft/latest/openraft/)
-- [`proptest`](https://github.com/proptest-rs/proptest)
-- [Loom](https://docs.rs/loom/latest/loom/)
-- [Criterion.rs](https://github.com/criterion-rs/criterion.rs)
+- [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines)
+- [cppreference](https://en.cppreference.com/)
+- [Boost.Asio overview](https://www.boost.org/latest/doc/html/boost_asio/overview/basics.html)
+- [Protocol Buffers C++ tutorial](https://protobuf.dev/getting-started/cpptutorial/)
+- [eBay NuRaft](https://github.com/eBay/NuRaft)
+- [GoogleTest](https://github.com/google/googletest)
+- [RapidCheck](https://github.com/emil-e/rapidcheck)
+- [Google Benchmark](https://github.com/google/benchmark)
+- [LLVM AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html)
+- [LLVM UndefinedBehaviorSanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html)
+- [LLVM ThreadSanitizer](https://clang.llvm.org/docs/ThreadSanitizer.html)
+- [LLVM libFuzzer](https://llvm.org/docs/LibFuzzer.html)
+- [clang-tidy](https://clang.llvm.org/extra/clang-tidy/)
 - [HdrHistogram](https://github.com/HdrHistogram/HdrHistogram)
 - [TLA+ examples](https://github.com/tlaplus/Examples)
 
