@@ -2,64 +2,53 @@
 
 ## Project goal
 
-Build a three-node C++23 sandbox that tests whether Raft log agreement, combined
+Build a three-node Rust sandbox that tests whether Raft log agreement, combined
 with a deterministic application state machine and idempotent client semantics,
 preserves identical committed orders, fills, and portfolio state through leader
 failure and recovery.
 
 The project should optimize for an understandable implementation, reproducible
-failure experiments, defensible evidence, and measurable systems performance. It
-is not a production exchange or a general-purpose consensus platform.
+failure experiments, and defensible evidence. It is not a production exchange
+or a general-purpose consensus platform.
 
 ## Chosen stack
 
 | Area | Choice | Purpose |
 |---|---|---|
-| Language | C++23 with Clang and GCC | Modern value types and explicit control over ownership, memory layout, allocation, and concurrency. |
-| Build | CMake presets + Ninja + Conan 2 or vcpkg | Reproducible debug, sanitizer, release, benchmark, and cross-compiler builds. |
-| Event runtime | Boost.Asio | Production TCP, timers, signals, cancellation, and event-loop execution outside the pure cores. |
-| Wire schema | Protocol Buffers over framed TCP | Typed, versioned peer and client messages with explicit framing. |
-| Byte handling | `std::span<std::byte>`, `std::vector<std::byte>`, and Asio buffers | Explicit bounded views, storage ownership, and scatter/gather operations. |
+| Language | Stable Rust, edition 2024 | Memory-safe systems programming without garbage collection; strong domain and protocol types. |
+| Build | Cargo workspace + locked dependencies | Reproducible builds, tests, benchmarks, documentation, and dependency management. |
+| Async runtime | Tokio | Production TCP, timers, signals, and task execution outside the pure cores. |
+| RPC schema | Tonic + Prost/Protocol Buffers | Typed, versioned peer and client messages. |
+| Byte handling | `bytes` | Bounded framing and buffer management. |
 | Persistence | Project-owned append-only WAL | Makes durability, corruption detection, truncation, and recovery explicit. |
 | Traces | CSV or JSON Lines | Human-readable bounded input fixtures and reproducible replay. |
-| Unit testing | GoogleTest/GoogleMock | Protocol, matching, storage, and component-level verification. |
-| Property testing | RapidCheck | Generated and minimized order, protocol, and failure histories. |
-| Fuzzing | Clang libFuzzer | Protocol decoding, WAL recovery, and malformed-input testing. |
-| Runtime analysis | ASan, UBSan, and TSan | Detect memory errors, undefined behavior, and data races in separate CI jobs. |
-| Static analysis | clang-tidy | Enforce ownership, correctness, and maintainability policies. |
+| Property testing | `proptest` | Generated and minimized order, protocol, and failure histories. |
+| Concurrency testing | Loom | Bounded exploration of small shared-memory components. |
+| Fuzzing | `cargo-fuzz`/libFuzzer | Protocol decoding, WAL recovery, and malformed-input testing. |
 | Formal model | TLA+/PlusCal + TLC | Check core Raft and client-deduplication safety invariants. |
-| Benchmarking | Google Benchmark + HdrHistogram | Microbenchmark regression detection and cluster tail-latency distributions. |
-| Profiling | Linux `perf` + flamegraphs | CPU, cache, branch, allocation, syscall, and scheduler evidence. |
-| Observability | spdlog/`fmt` + prometheus-cpp | Explain elections, replication, application, divergence, and recovery. |
-| Automation | GitHub Actions | Format, static analysis, Clang/GCC builds, sanitizers, tests, fuzz smoke, model checks, and benchmark builds. |
+| Benchmarking | Criterion.rs + HdrHistogram | Microbenchmark regression detection and cluster tail-latency distributions. |
+| Profiling | Linux `perf` + flamegraphs | CPU, cache, branch, allocation, and scheduler evidence. |
+| Observability | `tracing` + Prometheus metrics | Explain elections, replication, application, divergence, and recovery. |
+| Automation | GitHub Actions | Format, lint, test, model, fuzz-smoke, and benchmark-build checks. |
 
-Choose exactly one dependency manager: Conan 2 or vcpkg. Use Python only for
-workload generation, statistical analysis, and plots; it must not participate in
-consensus, matching, or replicated portfolio state.
+Use Python only for workload generation, statistical analysis, and plots. It
+must not participate in consensus, matching, or replicated portfolio state.
 
 ## Required concepts
 
-### Modern C++ systems programming
+### Rust systems programming
 
-- RAII and deterministic destruction.
-- Value semantics, move semantics, references, and smart pointers.
-- Object lifetime, ownership, iterator invalidation, and buffer lifetime.
-- `enum class`, `std::variant`, `std::visit`, strong wrapper types, concepts, and
-  `std::expected`.
-- A documented exception policy; core transition functions should expose
-  expected failures explicitly.
-- Threads, mutexes, channels/queues, atomics, memory ordering, and false sharing.
-- Boost.Asio event loops, timers, cancellation, handlers, and asynchronous buffer
-  lifetimes.
-- Memory representation, alignment, cache locality, allocation, copying, strict
-  aliasing, and undefined behavior.
-- CMake targets and presets, compiler warnings, clang-format, clang-tidy,
-  sanitizers, tests, fuzzing, and benchmarks.
+- Ownership, borrowing, lifetimes, moves, and interior mutability.
+- `Send`, `Sync`, channels, atomics, mutexes, and task cancellation.
+- Enums, exhaustive matching, newtypes, traits, generics, and error types.
+- Async Rust and the boundary between protocol logic and runtime effects.
+- Memory representation, alignment, cache locality, allocation, and copying.
+- Safe versus `unsafe` Rust and how to document an unsafe contract.
+- Cargo workspaces, features, profiles, Clippy, rustfmt, tests, and benchmarks.
 
-Prefer value types, RAII, standard containers, and explicit ownership throughout
-the protocol and matching cores. Raw pointers, custom allocators, lock-free
-structures, and manual memory management require measured justification,
-documented invariants, and isolated tests.
+Prefer safe Rust throughout the protocol and matching cores. Unsafe code is not
+a performance credential by itself; use it only for a measured extension with a
+small, documented, independently tested boundary.
 
 ### Raft and replicated state machines
 
@@ -120,8 +109,6 @@ answers the research question. Exclude fees, margin, and short selling initially
 - Durable Raft hard state: current term and vote.
 - Snapshot contents, installation, and log compaction after MVP recovery works.
 - Client ambiguity when a leader commits but crashes before responding.
-- RAII ownership of file descriptors and mapped regions.
-- Canonical byte encoding rather than raw persistence of ABI-dependent structs.
 
 ## Architectural boundaries
 
@@ -131,27 +118,26 @@ trace -> strategy/client -> runtime adapter -> pure Raft core
                                              -> committed entries
                                                 -> pure matcher/portfolio
 
-production: Boost.Asio + Protocol Buffers + real files/processes
+production: Tokio + Tonic + real files/processes
 simulation: virtual clock + network + storage + process lifecycle
 
 both execute the same protocol and application cores
 ```
 
-Suggested CMake target layout:
+Suggested Cargo workspace:
 
 - `domain`: commands, outcomes, IDs, prices, quantities, and validation.
 - `matching`: deterministic order book, fills, portfolio, and invariants.
 - `raft`: protocol state, input events, transitions, and output effects.
 - `storage`: hard state, WAL, checksums, snapshots, and recovery.
-- `transport`: Boost.Asio/Protocol Buffers peer and client adapters.
-- `node`: Boost.Asio production shell and lifecycle management.
+- `transport`: Tonic/Prost services and peer/client adapters.
+- `node`: Tokio production shell and lifecycle management.
 - `client`: leader discovery, retry, deduplication keys, and trace replay.
 - `simulator`: virtual time, network, storage, failures, and seed replay.
 - `benchmarks`: matcher microbenchmarks and open-loop cluster workloads.
 
-One logical event loop should mutate each node's Raft state. Asynchronous
-handlers communicate using owned typed events instead of sharing protocol
-internals through references protected by many locks.
+One logical owner should mutate each node's Raft state. RPC tasks communicate by
+typed events instead of sharing protocol internals behind many locks.
 
 ## Protocol and data model
 
@@ -166,20 +152,19 @@ Keep Raft messages separate from replicated application commands.
 - Inspection: node ID, role, term, leader, log tail, commit index, applied index,
   replication progress, and component state digests.
 
-Model domain primitives as strong wrapper structs rather than interchangeable
-integer aliases. Schema versioning is required. Rolling upgrades are not.
+Schema versioning is required. Rolling upgrades are not.
 
 ## Testing strategy
 
 ### Unit and property tests
 
-- Table-driven GoogleTest protocol transition tests.
+- Table-driven protocol transition tests.
 - Golden order-book and portfolio traces.
-- Generated valid and invalid order streams using RapidCheck.
+- Generated valid and invalid order streams using `proptest`.
 - Invariants after every generated command, not just final-state checks.
-- libFuzzer targets for protocol decoding and WAL recovery.
-- Separate ASan, UBSan, and TSan test configurations.
-- clang-tidy in CI for static-analysis findings.
+- Decoder and WAL-recovery fuzz targets.
+- Loom tests only for small shared-memory adapters where exhaustive exploration
+  is tractable.
 
 ### Deterministic distributed simulation
 
@@ -205,7 +190,7 @@ Create a small TLA+/PlusCal model for the fixed three-node system. Check:
 - monotonic commit and apply indices;
 - no duplicated logical application after client retry.
 
-The model does not prove the C++ implementation correct. It clarifies intended
+The model does not prove the Rust implementation correct. It clarifies intended
 invariants and provides traces against which implementation scenarios can be
 compared.
 
@@ -240,7 +225,7 @@ Measure:
 - matcher add/cancel/match time and allocations;
 - committed commands per second and saturation point;
 - p50, p95, p99, p99.9, and maximum latency;
-- allocations and bytes copied per committed command;
+- bytes copied and serialized per command;
 - cycles, instructions, branch misses, and LLC misses;
 - WAL synchronization latency;
 - replication lag;
@@ -249,11 +234,9 @@ Measure:
 
 Use an open-loop load generator, controlled CPU configuration, warm-up, repeated
 runs, confidence intervals, raw artifacts, and complete environment metadata.
-Record compiler and standard-library versions, optimization flags, LTO state,
-and target CPU. Never present sanitizer-build timings as release performance.
 
-Only optimize a measured bottleneck. Candidate experiments include `std::pmr`
-order arenas, bounded SPSC queues, alternative encodings, core pinning,
+Only optimize a measured bottleneck. Candidate experiments include preallocated
+order slabs, bounded SPSC channels, alternative encodings, core pinning,
 cache-line layout, `io_uring`, and memory-mapped logging. Each must retain a
 correct baseline and publish a before/after comparison.
 
@@ -272,16 +255,15 @@ correct baseline and publish a before/after comparison.
 
 ## Learning and delivery order
 
-1. C++23 ownership, RAII, value/move semantics, variants, error handling,
-   concurrency, atomics, the memory model, and Asio lifetime rules.
+1. Rust ownership, error handling, enums, traits, concurrency, and async bounds.
 2. Raft paper, invariants, and a small TLA+ model.
 3. Pure matching/portfolio state machine and property tests.
 4. Pure in-memory Raft transition core.
 5. Seeded deterministic simulator and fault histories.
 6. Committed application, state digests, and replicated deduplication.
 7. Checksummed WAL and restart recovery.
-8. Boost.Asio/Protocol Buffers production shell and three real processes.
-9. Full failure matrix, sanitizers, fuzzing, static analysis, and model checking.
+8. Tokio/Tonic production shell and three real processes.
+9. Full failure matrix, fuzzing, Loom checks, and model checking.
 10. Performance baselines, report, terminal demo, and one measured extension.
 
 ## Success criteria
@@ -296,8 +278,6 @@ The project succeeds when it demonstrates, with machine-readable artifacts:
 - **Crash recovery:** restarted replicas recover durable state and catch up.
 - **Liveness under assumptions:** a stable majority eventually elects a leader
   and resumes commits.
-- **C++ quality:** release, Clang, GCC, static-analysis, sanitizer, fuzzing, and
-  deterministic-simulation checks are clean for their stated scope.
 - **Measured cost:** the report isolates matching, serialization, persistence,
   replication, and failover costs without overstating production applicability.
 
@@ -306,17 +286,15 @@ The project succeeds when it demonstrates, with machine-readable artifacts:
 - Diego Ongaro and John Ousterhout, [In Search of an Understandable Consensus
   Algorithm](https://raft.github.io/raft.pdf).
 - Diego Ongaro, [Consensus: Bridging Theory and Practice](https://github.com/ongardie/dissertation/blob/master/stanford.pdf).
-- [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines).
-- [cppreference](https://en.cppreference.com/).
-- [Boost.Asio overview](https://www.boost.org/latest/doc/html/boost_asio/overview/basics.html).
-- [Protocol Buffers C++ tutorial](https://protobuf.dev/getting-started/cpptutorial/).
-- [eBay NuRaft](https://github.com/eBay/NuRaft) as a reference design.
-- [GoogleTest](https://github.com/google/googletest),
-  [RapidCheck](https://github.com/emil-e/rapidcheck), and
-  [Google Benchmark](https://github.com/google/benchmark).
-- [LLVM sanitizers](https://clang.llvm.org/docs/index.html),
-  [LLVM libFuzzer](https://llvm.org/docs/LibFuzzer.html), and
-  [clang-tidy](https://clang.llvm.org/extra/clang-tidy/).
+- [The Rust Programming Language](https://doc.rust-lang.org/book/).
+- [Tokio documentation](https://tokio.rs/).
+- [Tonic](https://github.com/hyperium/tonic) and
+  [Prost](https://github.com/tokio-rs/prost).
+- [`raft-rs`](https://github.com/tikv/raft-rs) and
+  [OpenRaft](https://docs.rs/openraft/latest/openraft/) as reference designs.
+- [`proptest`](https://github.com/proptest-rs/proptest),
+  [Loom](https://docs.rs/loom/latest/loom/), and
+  [Criterion.rs](https://github.com/criterion-rs/criterion.rs).
 - [TLA+ examples](https://github.com/tlaplus/Examples).
 - [HdrHistogram](https://github.com/HdrHistogram/HdrHistogram).
 
