@@ -27,11 +27,11 @@ pub enum MarketCommand {
         start: Option<String>,
 
         /// End timestamp in RFC-3339 format
-        #[arg(long, default_value = "2026-10-19")]
+        #[arg(long, default_value = "2026-02-19")]
         end: Option<String>,
 
         /// Maximum data points to return
-        #[arg(short, long, default_value_t = 10)]
+        #[arg(short, long, default_value_t = 10000)]
         limit: u32,
 
         /// Data feed (sip, iex, otc)
@@ -43,36 +43,10 @@ pub enum MarketCommand {
         sort: String,
 
         /// Optional directory to save output as Parquet
-        #[arg(long)]
+        #[arg(long, default_value = "data/raw/bars")]
         parquet_output_dir: Option<PathBuf>,
     },
 
-    // /// Fetch historical top-of-book stock quotes
-    // Quotes {
-    //     /// Comma-separated ticker symbols (e.g., AAPL,MSFT)
-    //     #[arg(short, long, default_value = "AAPL,MSFT")]
-    //     symbols: String,
-
-    //     /// Start timestamp in RFC-3339 format
-    //     #[arg(long)]
-    //     start: Option<String>,
-
-    //     /// End timestamp in RFC-3339 format
-    //     #[arg(long)]
-    //     end: Option<String>,
-
-    //     /// Maximum data points to return
-    //     #[arg(short, long, default_value_t = 10)]
-    //     limit: u32,
-
-    //     /// Data feed (sip, iex, otc)
-    //     #[arg(long, default_value = "sip")]
-    //     feed: String,
-
-    //     /// Sort direction (asc, desc)
-    //     #[arg(long, default_value = "asc")]
-    //     sort: String,
-    // },
     /// Backfill and download historical trade data into CSV or partitioned Parquet
     Trades {
         /// Comma-separated symbols (e.g. SPY,AAPL)
@@ -108,6 +82,7 @@ pub enum MarketCommand {
         requests_per_minute: u32,
     },
 
+    /// Backfill and download historical quotes data into CSV or partitioned Parquet
     Quotes {
         /// Comma-separated symbols. Defaults to ALPACA_SYMBOLS or standard list.
         #[arg(long, env = "ALPACA_SYMBOLS")]
@@ -152,5 +127,18 @@ pub enum MarketCommand {
         /// Proactive API throttle. Default: 150 requests/minute.
         #[arg(long, default_value_t = 150, env = "ALPACA_REQUESTS_PER_MINUTE")]
         requests_per_minute: u32,
+    },
+
+    /// Plot historical data for visualizations
+    Plot {
+        /// Stock Ticker to plot data for
+        #[arg(long)]
+        symbol: String,
+        /// Directory for historical quote CSV output.
+        #[arg(long, default_value = "data/raw/bars/SPY_bars.parquet")]
+        input_file: PathBuf,
+        /// Type of data we're getting to plot
+        #[arg(long, default_value = "bars", value_parser = ["bars", "trades", "quotes"])]
+        data_type: String,
     },
 }

@@ -3,7 +3,7 @@
 pub mod args;
 pub mod market;
 pub mod utils;
-
+pub mod plots;
 pub use market::alpaca::models::{
     SortOrder, StockBar, StockBarsQuery, StockBarsResponse, StockFeed, StockQuote,
     StockQuotesQuery, StockQuotesResponse,

@@ -15,6 +15,7 @@ use raft_replicated_order_matching_and_execution_sandbox::{
             trades::HistoricalTradeDownloader,
         },
     },
+    plots::plot_bars::PlotBars,
     utils::{five_years_ago, parse_iso_datetime},
 };
 use std::{error::Error, time::Duration};
@@ -179,6 +180,14 @@ pub fn run(command: MarketCommand) -> Result<(), Box<dyn Error>> {
                 let count = downloader.download_symbol(&symbol, start, end)?;
                 println!("{symbol}: {count} quotes downloaded");
             }
+        }
+        MarketCommand::Plot {
+            symbol,
+            input_file,
+            data_type,
+        } => {
+            let plot_bars = PlotBars::new(symbol, input_file, data_type)?;
+            plot_bars.plot_bars()?;
         }
         MarketCommand::List => println!("Market data commands: bars, quotes, trades"),
     }
