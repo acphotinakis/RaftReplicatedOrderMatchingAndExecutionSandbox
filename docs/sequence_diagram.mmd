@@ -1,0 +1,49 @@
+sequenceDiagram
+    autonumber
+    participant A as Alpaca Historical API
+    participant T as Trace Builder
+    participant D as Replay Driver
+    participant S as SMA Strategy
+    participant L as Raft Leader
+    participant F as Two Followers
+    participant E as Execution State on Each Node
+
+    A->>T: Historical SPY 1-minute OHLCV bars
+    T->>T: Validate, sort, normalize prices to integers
+    T-->>D: Fixed trace + metadata + checksum
+
+    D->>L: Initialize simulated account
+    L->>F: Persist and replicate command
+    F-->>L: Durable acknowledgments
+    Note over L,F: Commit after durable majority
+    L->>E: Apply initialization in log order
+
+    loop Each completed bar k
+        D->>L: MarketBar(k), stable request ID
+        L->>F: AppendEntries containing bar k
+        F-->>L: Acknowledge after durable storage
+        Note over L,F: Leader advances commit index
+        L->>F: Announce commit index
+        L->>E: Apply committed bar k
+        Note over E: Fill previously pending orders at open(k)<br/>Update cash, positions, orders, and fills
+        L-->>D: Applied result and simulated fills
+
+        D->>S: Reveal completed bar k and updated portfolio
+        S->>S: Update 5-bar and 20-bar SMAs
+
+        opt SMA crossover generates an order
+            S-->>D: Buy or sell 10 shares
+            D->>L: SubmitOrder, stable request ID
+            L->>F: Persist and replicate order
+            F-->>L: Durable acknowledgments
+            L->>F: Announce commitment
+            L->>E: Apply order as pending
+            L-->>D: Order accepted awaiting next bar
+        end
+    end
+
+    Note over D,E: An order generated after close(k)<br/>can execute at open(k+1), never open(k)
+
+    D->>E: Inspect replicas at common applied index
+    E-->>D: Orders, fills, portfolio, and state digests
+    D->>D: Compare replicas and save experiment results

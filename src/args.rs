@@ -41,6 +41,10 @@ pub enum MarketCommand {
         /// Sort direction (asc, desc)
         #[arg(long, default_value = "asc")]
         sort: String,
+
+        /// Optional directory to save output as Parquet
+        #[arg(long)]
+        parquet_output_dir: Option<PathBuf>,
     },
 
     // /// Fetch historical top-of-book stock quotes

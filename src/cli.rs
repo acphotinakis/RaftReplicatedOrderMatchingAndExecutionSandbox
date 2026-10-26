@@ -84,9 +84,11 @@ pub fn run(command: MarketCommand) -> Result<(), Box<dyn Error>> {
             limit,
             feed,
             sort,
+            parquet_output_dir,
         } => {
+            let symbol_list = self::symbols(&symbols)?;
             let query = StockBarsQuery {
-                symbols: self::symbols(&symbols)?.join(","),
+                symbols: symbol_list.join(","),
                 timeframe,
                 start,
                 end,
@@ -103,7 +105,20 @@ pub fn run(command: MarketCommand) -> Result<(), Box<dyn Error>> {
                         &client, &query,
                     )
                     .await?;
-                println!("{}", serde_json::to_string_pretty(&response)?);
+
+                if let Some(parquet_dir) = parquet_output_dir {
+                    for (symbol, bars) in &response.bars {
+                        if bars.is_empty() {
+                            continue;
+                        }
+                        let batch = raft_replicated_order_matching_and_execution_sandbox::market::storage::bars_to_record_batch(bars)?;
+                        let out_path = parquet_dir.join(format!("{symbol}_bars.parquet"));
+                        raft_replicated_order_matching_and_execution_sandbox::market::storage::save_parquet(&batch, &out_path)?;
+                        println!("Saved {} bars for {symbol} to {}", bars.len(), out_path.display());
+                    }
+                } else {
+                    println!("{}", serde_json::to_string_pretty(&response)?);
+                }
                 Ok::<(), Box<dyn Error>>(())
             })?;
         }
