@@ -106,6 +106,13 @@ impl HistoricalQuoteDownloader {
             let page: SingleSymbolQuotesResponse = self
                 .client
                 .get_json(&format!("/v2/stocks/{symbol}/quotes"), &params)?;
+
+            println!(
+                "{symbol} [{}] | page returned {} quotes",
+                window.day,
+                page.quotes.len()
+            );
+
             for quote in &page.quotes {
                 writer.write_record(quote_to_row(symbol, quote)?)?;
             }
