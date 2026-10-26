@@ -134,11 +134,26 @@ pub enum MarketCommand {
         /// Stock Ticker to plot data for
         #[arg(long)]
         symbol: String,
-        /// Directory for historical quote CSV output.
+        /// Primary input parquet file (or directory).
         #[arg(long, default_value = "data/raw/bars/SPY_bars.parquet")]
         input_file: PathBuf,
-        /// Type of data we're getting to plot
-        #[arg(long, default_value = "bars", value_parser = ["bars", "trades", "quotes"])]
+        /// Optional secondary input file (e.g. trades file for tape-walk overlay).
+        #[arg(long)]
+        secondary_file: Option<PathBuf>,
+        /// Type of visualization: "bars", "quotes" (or "nbbo"), "trades" (or "volume-profile"), "tape-walk" (or "tape")
+        #[arg(long, default_value = "bars", value_parser = ["bars", "quotes", "nbbo", "trades", "volume-profile", "tape-walk", "tape"])]
         data_type: String,
+        /// Optional start time filter (e.g. "09:30:00" or ISO-8601).
+        #[arg(long)]
+        start_time: Option<String>,
+        /// Optional end time filter (e.g. "09:35:00" or ISO-8601).
+        #[arg(long)]
+        end_time: Option<String>,
+        /// Maximum points to sample/render for high-density plots.
+        #[arg(long, default_value_t = 5000)]
+        max_points: usize,
+        /// Optional custom output PNG file path.
+        #[arg(long)]
+        output_file: Option<PathBuf>,
     },
 }

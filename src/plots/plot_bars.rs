@@ -1,3 +1,5 @@
+//! Historical bar chart visualization.
+
 use std::error::Error;
 use std::fs::File;
 use std::path::PathBuf;

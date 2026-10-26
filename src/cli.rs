@@ -15,7 +15,9 @@ use raft_replicated_order_matching_and_execution_sandbox::{
             trades::HistoricalTradeDownloader,
         },
     },
-    plots::plot_bars::PlotBars,
+    plots::{
+        plot_bars::PlotBars, plot_quotes::PlotQuotes, plot_tape::PlotTape, plot_trades::PlotTrades,
+    },
     utils::{five_years_ago, parse_iso_datetime},
 };
 use std::{error::Error, time::Duration};
@@ -184,11 +186,55 @@ pub fn run(command: MarketCommand) -> Result<(), Box<dyn Error>> {
         MarketCommand::Plot {
             symbol,
             input_file,
+            secondary_file,
             data_type,
-        } => {
-            let plot_bars = PlotBars::new(symbol, input_file, data_type)?;
-            plot_bars.plot_bars()?;
-        }
+            start_time,
+            end_time,
+            max_points,
+            output_file,
+        } => match data_type.to_lowercase().as_str() {
+            "bars" => {
+                let plot_bars = PlotBars::new(symbol, input_file, data_type)?;
+                plot_bars.plot_bars()?;
+            }
+            "quotes" | "nbbo" => {
+                let plot_quotes = PlotQuotes::new(
+                    symbol,
+                    input_file,
+                    output_file,
+                    start_time,
+                    end_time,
+                    max_points,
+                )?;
+                plot_quotes.plot_quotes()?;
+            }
+            "trades" | "volume-profile" => {
+                let plot_trades = PlotTrades::new(
+                    symbol,
+                    input_file,
+                    output_file,
+                    start_time,
+                    end_time,
+                    max_points,
+                )?;
+                plot_trades.plot_trades()?;
+            }
+            "tape-walk" | "tape" => {
+                let plot_tape = PlotTape::new(
+                    symbol,
+                    input_file,
+                    secondary_file,
+                    output_file,
+                    start_time,
+                    end_time,
+                    max_points,
+                )?;
+                plot_tape.plot_tape()?;
+            }
+            other => {
+                return Err(format!("Unsupported plot data type: {other}").into());
+            }
+        },
         MarketCommand::List => println!("Market data commands: bars, quotes, trades"),
     }
     Ok(())
