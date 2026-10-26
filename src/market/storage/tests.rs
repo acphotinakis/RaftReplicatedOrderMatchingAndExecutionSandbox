@@ -1,7 +1,7 @@
 use super::*;
 use crate::market::alpaca::models::StockBar;
-use arrow::array::{Array, Float64Array, StringArray, TimestampNanosecondArray, UInt64Array};
 use ::parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
+use arrow::array::{Array, Float64Array, StringArray, TimestampNanosecondArray, UInt64Array};
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};

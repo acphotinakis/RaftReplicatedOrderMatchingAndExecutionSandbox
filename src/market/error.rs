@@ -53,7 +53,9 @@ impl Error for MarketError {
             Self::Http(error) => Some(error),
             Self::Arrow(error) => Some(error),
             Self::Parquet(error) => Some(error),
-            Self::InvalidConfig(_) | Self::InvalidData(_) | Self::HttpStatus { .. }
+            Self::InvalidConfig(_)
+            | Self::InvalidData(_)
+            | Self::HttpStatus { .. }
             | Self::RetriesExhausted => None,
         }
     }
@@ -62,7 +64,9 @@ impl Error for MarketError {
 macro_rules! from_error {
     ($source:ty, $variant:ident) => {
         impl From<$source> for MarketError {
-            fn from(error: $source) -> Self { Self::$variant(error) }
+            fn from(error: $source) -> Self {
+                Self::$variant(error)
+            }
         }
     };
 }

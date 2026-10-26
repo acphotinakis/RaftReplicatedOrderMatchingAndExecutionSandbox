@@ -1,6 +1,9 @@
 //! Exact-query checkpoints and idempotent CSV publication.
 
-use super::{config::{DownloadConfig, validate_component}, windows::DownloadWindow};
+use super::{
+    config::{DownloadConfig, validate_component},
+    windows::DownloadWindow,
+};
 use crate::market::{error::MarketError, storage::csv::rebuild_from_parts};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeSet, error::Error, fs, path::PathBuf};
@@ -45,7 +48,10 @@ pub struct Checkpoint {
 impl Checkpoint {
     /// Open a checkpoint, invalidating completion when the exact query changes.
     /// A corrupt checkpoint is reported instead of silently restarting an append.
-    pub fn open(config: &DownloadConfig, mut identity: DatasetIdentity) -> Result<Self, Box<dyn Error>> {
+    pub fn open(
+        config: &DownloadConfig,
+        mut identity: DatasetIdentity,
+    ) -> Result<Self, Box<dyn Error>> {
         validate_component(&identity.symbol)?;
         validate_component(&identity.kind)?;
         config.validate()?;
@@ -54,17 +60,29 @@ impl Checkpoint {
             fs::create_dir_all(root)?;
             identity.parquet_output_dir = Some(fs::canonicalize(root)?);
         }
-        let state_dir = config.output_dir.join(format!(".historical_{}_state", identity.kind));
+        let state_dir = config
+            .output_dir
+            .join(format!(".historical_{}_state", identity.kind));
         fs::create_dir_all(&state_dir)?;
         let stem = format!("{}_{}", identity.symbol, identity.feed);
         let path = state_dir.join(format!("{stem}_windows.json"));
         let parts = state_dir.join(format!("{stem}_parts"));
         fs::create_dir_all(&parts)?;
-        let output = config.output_dir.join(format!("{}_historical_{}_{}.csv", identity.symbol, identity.kind, identity.feed));
+        let output = config.output_dir.join(format!(
+            "{}_historical_{}_{}.csv",
+            identity.symbol, identity.kind, identity.feed
+        ));
         let lock = state_dir.join(format!("{stem}.lock"));
         let mut checkpoint = Self {
-            state: State { version: 1, identity, completed_days: BTreeSet::new() },
-            path, parts, output, lock: None,
+            state: State {
+                version: 1,
+                identity,
+                completed_days: BTreeSet::new(),
+            },
+            path,
+            parts,
+            output,
+            lock: None,
         };
         // Holding a lock prevents concurrent runs from replacing the same parts.
         fs::OpenOptions::new().write(true).create_new(true).open(&lock)
@@ -73,14 +91,18 @@ impl Checkpoint {
         if checkpoint.path.exists() {
             let stored: State = serde_json::from_slice(&fs::read(&checkpoint.path)?)?;
             if stored.version != 1 {
-                return Err(MarketError::InvalidData("unsupported checkpoint version".into()).into());
+                return Err(
+                    MarketError::InvalidData("unsupported checkpoint version".into()).into(),
+                );
             }
             if stored.identity == checkpoint.state.identity {
                 checkpoint.state = stored;
             }
         }
         checkpoint.save()?;
-        if checkpoint.state.identity.parquet_output_dir.is_none() && !checkpoint.state.completed_days.is_empty() {
+        if checkpoint.state.identity.parquet_output_dir.is_none()
+            && !checkpoint.state.completed_days.is_empty()
+        {
             checkpoint.rebuild_csv()?;
         }
         Ok(checkpoint)
@@ -93,17 +115,25 @@ impl Checkpoint {
 
     /// Whether the requested window has a checkpoint and its published artifact.
     pub fn is_complete(&self, window: &DownloadWindow) -> bool {
-        if !self.state.completed_days.contains(&window.day.to_string()) { return false; }
+        if !self.state.completed_days.contains(&window.day.to_string()) {
+            return false;
+        }
         match &self.state.identity.parquet_output_dir {
-            Some(root) => root.join(format!("symbol={}", self.state.identity.symbol))
-                .join(format!("date={}", window.day)).join(format!("{}.parquet", self.state.identity.kind)).is_file(),
+            Some(root) => root
+                .join(format!("symbol={}", self.state.identity.symbol))
+                .join(format!("date={}", window.day))
+                .join(format!("{}.parquet", self.state.identity.kind))
+                .is_file(),
             None => self.parts.join(format!("{}.csv", window.day)).is_file(),
         }
     }
 
     /// Publish an already completed CSV part and persist completion before rebuilding output.
     pub fn complete_csv(&mut self, window: &DownloadWindow) -> Result<(), Box<dyn Error>> {
-        fs::rename(self.temporary_part(window), self.parts.join(format!("{}.csv", window.day)))?;
+        fs::rename(
+            self.temporary_part(window),
+            self.parts.join(format!("{}.csv", window.day)),
+        )?;
         self.state.completed_days.insert(window.day.to_string());
         self.save()?;
         self.rebuild_csv()
@@ -125,8 +155,12 @@ impl Checkpoint {
     }
 
     fn rebuild_csv(&self) -> Result<(), Box<dyn Error>> {
-        let parts: Vec<_> = self.state.completed_days.iter()
-            .map(|day| self.parts.join(format!("{day}.csv"))).collect();
+        let parts: Vec<_> = self
+            .state
+            .completed_days
+            .iter()
+            .map(|day| self.parts.join(format!("{day}.csv")))
+            .collect();
         rebuild_from_parts(&parts, &self.output)
     }
 }
@@ -149,10 +183,32 @@ mod tests {
     static SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
     fn fixture() -> (DownloadConfig, DatasetIdentity, DownloadWindow) {
-        let root = std::env::temp_dir().join(format!("download-checkpoint-{}-{}", std::process::id(), SEQUENCE.fetch_add(1, Ordering::Relaxed)));
-        let config = DownloadConfig { output_dir: root, parquet_output_dir: None, feed: "sip".into(), limit: 100 };
-        let identity = DatasetIdentity { kind: "quotes".into(), symbol: "SPY".into(), feed: "sip".into(), start: "2024-01-01T09:00:00Z".into(), end: "2024-01-01T10:00:00Z".into(), currency: Some("USD".into()), asof: None, parquet_output_dir: None };
-        let window = DownloadWindow { start: identity.start.clone(), end: identity.end.clone(), day: "2024-01-01".parse().unwrap() };
+        let root = std::env::temp_dir().join(format!(
+            "download-checkpoint-{}-{}",
+            std::process::id(),
+            SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let config = DownloadConfig {
+            output_dir: root,
+            parquet_output_dir: None,
+            feed: "sip".into(),
+            limit: 100,
+        };
+        let identity = DatasetIdentity {
+            kind: "quotes".into(),
+            symbol: "SPY".into(),
+            feed: "sip".into(),
+            start: "2024-01-01T09:00:00Z".into(),
+            end: "2024-01-01T10:00:00Z".into(),
+            currency: Some("USD".into()),
+            asof: None,
+            parquet_output_dir: None,
+        };
+        let window = DownloadWindow {
+            start: identity.start.clone(),
+            end: identity.end.clone(),
+            day: "2024-01-01".parse().unwrap(),
+        };
         (config, identity, window)
     }
 
@@ -161,14 +217,21 @@ mod tests {
         let (config, identity, window) = fixture();
         {
             let mut checkpoint = Checkpoint::open(&config, identity.clone()).unwrap();
-            fs::write(checkpoint.temporary_part(&window), "timestamp,price\n1,10\n").unwrap();
+            fs::write(
+                checkpoint.temporary_part(&window),
+                "timestamp,price\n1,10\n",
+            )
+            .unwrap();
             checkpoint.complete_csv(&window).unwrap();
             fs::write(&checkpoint.output, "interrupted publication").unwrap();
         }
         {
             let checkpoint = Checkpoint::open(&config, identity).unwrap();
             assert!(checkpoint.is_complete(&window));
-            assert_eq!(fs::read_to_string(&checkpoint.output).unwrap(), "timestamp,price\n1,10\n");
+            assert_eq!(
+                fs::read_to_string(&checkpoint.output).unwrap(),
+                "timestamp,price\n1,10\n"
+            );
         }
         fs::remove_dir_all(config.output_dir).unwrap();
     }
@@ -179,7 +242,11 @@ mod tests {
         for changed in ["start", "currency", "asof", "output"] {
             {
                 let mut checkpoint = Checkpoint::open(&config, identity.clone()).unwrap();
-                fs::write(checkpoint.temporary_part(&window), "timestamp,price\n1,10\n").unwrap();
+                fs::write(
+                    checkpoint.temporary_part(&window),
+                    "timestamp,price\n1,10\n",
+                )
+                .unwrap();
                 checkpoint.complete_csv(&window).unwrap();
             }
             let mut other = identity.clone();

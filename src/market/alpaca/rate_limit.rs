@@ -18,8 +18,17 @@ pub struct RateLimitHeaders {
 impl RateLimitHeaders {
     /// Parses numeric headers; absent or malformed values remain unknown.
     pub fn from_headers(headers: &HeaderMap) -> Self {
-        let parse = |key: &str| headers.get(key).and_then(|v| v.to_str().ok()).and_then(|s| s.parse().ok());
-        Self { limit: parse("X-RateLimit-Limit"), remaining: parse("X-RateLimit-Remaining"), reset_unix_epoch: parse("X-RateLimit-Reset") }
+        let parse = |key: &str| {
+            headers
+                .get(key)
+                .and_then(|v| v.to_str().ok())
+                .and_then(|s| s.parse().ok())
+        };
+        Self {
+            limit: parse("X-RateLimit-Limit"),
+            remaining: parse("X-RateLimit-Remaining"),
+            reset_unix_epoch: parse("X-RateLimit-Reset"),
+        }
     }
 }
 
@@ -36,9 +45,14 @@ impl RateLimiter {
     /// Returns an invalid-configuration error for a zero request allowance.
     pub fn new(requests_per_minute: u32) -> Result<Self, MarketError> {
         if requests_per_minute == 0 {
-            return Err(MarketError::InvalidConfig("Request rate must be positive".into()));
+            return Err(MarketError::InvalidConfig(
+                "Request rate must be positive".into(),
+            ));
         }
-        Ok(Self { interval: Duration::from_secs_f64(60.0 / f64::from(requests_per_minute)), last_request: Mutex::new(None) })
+        Ok(Self {
+            interval: Duration::from_secs_f64(60.0 / f64::from(requests_per_minute)),
+            last_request: Mutex::new(None),
+        })
     }
 
     /// Waits until another blocking request may start.
@@ -46,7 +60,10 @@ impl RateLimiter {
     /// # Errors
     /// Returns an error if another thread panicked while holding the pacer.
     pub fn wait(&self) -> Result<(), MarketError> {
-        let mut last = self.last_request.lock().map_err(|_| MarketError::InvalidData("Rate limiter mutex was poisoned".into()))?;
+        let mut last = self
+            .last_request
+            .lock()
+            .map_err(|_| MarketError::InvalidData("Rate limiter mutex was poisoned".into()))?;
         if let Some(previous) = *last {
             std::thread::sleep(self.interval.saturating_sub(previous.elapsed()));
         }
@@ -65,7 +82,14 @@ mod tests {
         headers.insert("x-ratelimit-limit", "200".parse().unwrap());
         headers.insert("x-ratelimit-remaining", "invalid".parse().unwrap());
         let parsed = RateLimitHeaders::from_headers(&headers);
-        assert_eq!(parsed, RateLimitHeaders { limit: Some(200), remaining: None, reset_unix_epoch: None });
+        assert_eq!(
+            parsed,
+            RateLimitHeaders {
+                limit: Some(200),
+                remaining: None,
+                reset_unix_epoch: None
+            }
+        );
     }
 
     #[test]

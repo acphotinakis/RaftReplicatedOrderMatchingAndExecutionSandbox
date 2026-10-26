@@ -69,7 +69,6 @@ pub enum MarketCommand {
     //     #[arg(long, default_value = "asc")]
     //     sort: String,
     // },
-
     /// Backfill and download historical trade data into CSV or partitioned Parquet
     Trades {
         /// Comma-separated symbols (e.g. SPY,AAPL)

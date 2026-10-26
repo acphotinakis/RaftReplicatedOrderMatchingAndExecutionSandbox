@@ -15,7 +15,10 @@ pub struct DownloadWindow {
 }
 
 /// Split a nonempty requested interval into nonoverlapping UTC days.
-pub fn daily_windows(start: DateTime<Utc>, end: DateTime<Utc>) -> Result<Vec<DownloadWindow>, MarketError> {
+pub fn daily_windows(
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
+) -> Result<Vec<DownloadWindow>, MarketError> {
     if start >= end {
         return Err(MarketError::InvalidConfig("start must precede end".into()));
     }
@@ -23,14 +26,24 @@ pub fn daily_windows(start: DateTime<Utc>, end: DateTime<Utc>) -> Result<Vec<Dow
     let mut windows = Vec::new();
     loop {
         windows.push(DownloadWindow {
-            start: if day == start.date_naive() { start.to_rfc3339_opts(SecondsFormat::AutoSi, true) }
-                else { format!("{day}T00:00:00Z") },
-            end: if day == end.date_naive() { end.to_rfc3339_opts(SecondsFormat::AutoSi, true) }
-                else { format!("{day}T23:59:59.999999999Z") },
+            start: if day == start.date_naive() {
+                start.to_rfc3339_opts(SecondsFormat::AutoSi, true)
+            } else {
+                format!("{day}T00:00:00Z")
+            },
+            end: if day == end.date_naive() {
+                end.to_rfc3339_opts(SecondsFormat::AutoSi, true)
+            } else {
+                format!("{day}T23:59:59.999999999Z")
+            },
             day,
         });
-        if day == end.date_naive() { break; }
-        day = day.checked_add_days(Days::new(1)).ok_or_else(|| MarketError::InvalidConfig("date range overflow".into()))?;
+        if day == end.date_naive() {
+            break;
+        }
+        day = day
+            .checked_add_days(Days::new(1))
+            .ok_or_else(|| MarketError::InvalidConfig("date range overflow".into()))?;
     }
     Ok(windows)
 }

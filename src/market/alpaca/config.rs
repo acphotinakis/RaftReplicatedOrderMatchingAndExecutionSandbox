@@ -23,9 +23,14 @@ impl Credentials {
     /// Rejects empty keys and values unsuitable for HTTP headers.
     pub fn new(api_key: &str, secret_key: &str) -> Result<Self, MarketError> {
         if api_key.trim().is_empty() || secret_key.trim().is_empty() {
-            return Err(MarketError::InvalidConfig("Alpaca credentials must not be empty".into()));
+            return Err(MarketError::InvalidConfig(
+                "Alpaca credentials must not be empty".into(),
+            ));
         }
-        let credentials = Self { api_key: api_key.to_owned(), secret_key: secret_key.to_owned() };
+        let credentials = Self {
+            api_key: api_key.to_owned(),
+            secret_key: secret_key.to_owned(),
+        };
         credentials.headers()?;
         Ok(credentials)
     }
@@ -33,8 +38,13 @@ impl Credentials {
     pub(super) fn headers(&self) -> Result<HeaderMap, MarketError> {
         let mut headers = HeaderMap::new();
         headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
-        for (name, value) in [("APCA-API-KEY-ID", &self.api_key), ("APCA-API-SECRET-KEY", &self.secret_key)] {
-            let mut header = HeaderValue::from_str(value).map_err(|_| MarketError::InvalidConfig("Invalid Alpaca credential header".into()))?;
+        for (name, value) in [
+            ("APCA-API-KEY-ID", &self.api_key),
+            ("APCA-API-SECRET-KEY", &self.secret_key),
+        ] {
+            let mut header = HeaderValue::from_str(value).map_err(|_| {
+                MarketError::InvalidConfig("Invalid Alpaca credential header".into())
+            })?;
             header.set_sensitive(true);
             headers.insert(name, header);
         }
@@ -69,14 +79,23 @@ impl Default for AlpacaConfig {
 impl AlpacaConfig {
     pub(super) fn validate(&self) -> Result<(), MarketError> {
         if self.max_attempts == 0 || self.requests_per_minute == 0 || self.timeout.is_zero() {
-            return Err(MarketError::InvalidConfig("Attempts, request rate, and timeout must be positive".into()));
+            return Err(MarketError::InvalidConfig(
+                "Attempts, request rate, and timeout must be positive".into(),
+            ));
         }
-        let url = reqwest::Url::parse(&self.base_url).map_err(|_| MarketError::InvalidConfig("Invalid Alpaca base URL".into()))?;
-        if !matches!(url.scheme(), "http" | "https") || url.host_str().is_none()
-            || !url.username().is_empty() || url.password().is_some()
-            || url.query().is_some() || url.fragment().is_some()
-            || url.path() != "/" {
-            return Err(MarketError::InvalidConfig("Alpaca base URL must be an HTTP(S) origin".into()));
+        let url = reqwest::Url::parse(&self.base_url)
+            .map_err(|_| MarketError::InvalidConfig("Invalid Alpaca base URL".into()))?;
+        if !matches!(url.scheme(), "http" | "https")
+            || url.host_str().is_none()
+            || !url.username().is_empty()
+            || url.password().is_some()
+            || url.query().is_some()
+            || url.fragment().is_some()
+            || url.path() != "/"
+        {
+            return Err(MarketError::InvalidConfig(
+                "Alpaca base URL must be an HTTP(S) origin".into(),
+            ));
         }
         Ok(())
     }

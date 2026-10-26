@@ -20,7 +20,9 @@ impl DownloadConfig {
     pub(crate) fn validate(&self) -> Result<(), MarketError> {
         validate_component(&self.feed)?;
         if !(1..=10_000).contains(&self.limit) {
-            return Err(MarketError::InvalidConfig("page limit must be 1..=10000".into()));
+            return Err(MarketError::InvalidConfig(
+                "page limit must be 1..=10000".into(),
+            ));
         }
         Ok(())
     }
@@ -41,10 +43,16 @@ pub struct QuoteDownloadConfig {
 pub type TradeDownloadConfig = DownloadConfig;
 
 pub(crate) fn validate_component(value: &str) -> Result<(), MarketError> {
-    if value.is_empty() || value == "." || value == ".."
-        || !value.bytes().all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte))
+    if value.is_empty()
+        || value == "."
+        || value == ".."
+        || !value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte))
     {
-        return Err(MarketError::InvalidConfig(format!("invalid dataset name: {value}")));
+        return Err(MarketError::InvalidConfig(format!(
+            "invalid dataset name: {value}"
+        )));
     }
     Ok(())
 }

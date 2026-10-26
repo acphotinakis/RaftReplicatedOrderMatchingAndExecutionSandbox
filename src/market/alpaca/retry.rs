@@ -14,11 +14,13 @@ pub fn retryable_error(error: &reqwest::Error) -> bool {
 
 /// Delay after a failed attempt, honoring a valid numeric `Retry-After` header.
 pub fn retry_delay(headers: &HeaderMap, attempt: u32) -> Duration {
-    if let Some(seconds) = headers.get("Retry-After")
+    if let Some(seconds) = headers
+        .get("Retry-After")
         .and_then(|value| value.to_str().ok())
         .and_then(|value| value.parse::<f64>().ok())
         .filter(|seconds| seconds.is_finite() && *seconds >= 0.0)
-        .and_then(|seconds| Duration::try_from_secs_f64(seconds).ok()) {
+        .and_then(|seconds| Duration::try_from_secs_f64(seconds).ok())
+    {
         return seconds;
     }
     Duration::from_secs(1_u64 << attempt.saturating_sub(1).min(6)).min(Duration::from_secs(60))
@@ -30,7 +32,12 @@ mod tests {
 
     #[test]
     fn permanent_client_errors_are_not_retried() {
-        for status in [StatusCode::BAD_REQUEST, StatusCode::UNAUTHORIZED, StatusCode::FORBIDDEN, StatusCode::NOT_FOUND] {
+        for status in [
+            StatusCode::BAD_REQUEST,
+            StatusCode::UNAUTHORIZED,
+            StatusCode::FORBIDDEN,
+            StatusCode::NOT_FOUND,
+        ] {
             assert!(!retryable_status(status));
         }
         assert!(retryable_status(StatusCode::TOO_MANY_REQUESTS));
