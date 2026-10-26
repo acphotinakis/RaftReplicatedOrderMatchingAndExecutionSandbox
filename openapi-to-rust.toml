@@ -1,0 +1,26 @@
+[generator]
+spec_path = "schemas/historical_quotes.json"
+output_dir = "src/generated"
+module_name = "api"
+# All paths above are relative to this TOML file, not the shell's working directory.
+
+[generator.builders]
+# Add `*_builder()` when an operation has more than three optional values.
+# See "additive operation builders" below for fluent calls and threshold = 0.
+enabled = true
+threshold = 3
+
+[features]
+enable_async_client = true
+
+[http_client]
+base_url = "https://data.alpaca.markets/v2/stocks/bars"
+timeout_seconds = 30
+max_response_body_bytes = 8388608
+
+[http_client.retry]
+max_retries = 3
+
+[http_client.auth]
+type = "Bearer"
+header_name = "Authorization"
