@@ -9,3 +9,8 @@ a.txt
 
 docs/alpaca_apis/pull_data.sh
 
+
+
+# Added by cargo
+
+/target
