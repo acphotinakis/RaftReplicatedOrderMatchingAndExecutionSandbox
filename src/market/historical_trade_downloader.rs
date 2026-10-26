@@ -15,7 +15,7 @@ use std::time::{Duration, Instant};
 
 use crate::market::partition_parquet::partition_csv_to_parquet;
 use crate::market::rate_limiter::RateLimiter;
-use crate::utils::{end_of_day_rfc3339, rfc3339};
+use crate::utils::{end_of_day_rfc3339, iter_daily_windows, rfc3339};
 
 const BASE_URL: &str = "https://data.alpaca.markets/v2/stocks/trades";
 const MAX_LIMIT: usize = 10_000;
@@ -32,34 +32,6 @@ const CSV_FIELDS: &[&str] = &[
     "update",
     "tape",
 ];
-
-pub fn iter_daily_windows(
-    start: DateTime<Utc>,
-    end: DateTime<Utc>,
-) -> Vec<(String, String, NaiveDate)> {
-    let mut windows = Vec::new();
-    let mut current_day = start.date_naive();
-    let end_day = end.date_naive();
-
-    while current_day <= end_day {
-        let window_start = if current_day == start.date_naive() {
-            rfc3339(&start)
-        } else {
-            format!("{}T00:00:00Z", current_day.format("%Y-%m-%d"))
-        };
-
-        let window_end = if current_day == end.date_naive() {
-            rfc3339(&end)
-        } else {
-            end_of_day_rfc3339(current_day)
-        };
-
-        windows.push((window_start, window_end, current_day));
-        current_day = current_day.checked_add_days(Days::new(1)).unwrap();
-    }
-
-    windows
-}
 
 // --- Data Models ---
 
@@ -107,10 +79,10 @@ impl HistoricalTradeDownloader {
             fs::create_dir_all(p_dir)?;
         }
 
-        let tmp_dir = output_dir.join(".historical_tmp");
+        let tmp_dir = output_dir.join(".historical_trades_tmp");
         fs::create_dir_all(&tmp_dir)?;
 
-        let state_dir = output_dir.join(".historical_state");
+        let state_dir = output_dir.join(".historical_trades_state");
         fs::create_dir_all(&state_dir)?;
 
         let mut headers = HeaderMap::new();
@@ -169,7 +141,7 @@ impl HistoricalTradeDownloader {
                         .and_then(|v| v.to_str().ok())
                         .unwrap_or("");
 
-                    debug!(
+                    println!(
                         "Rate limit | limit={} remaining={} reset={}",
                         limit, remaining, reset
                     );
@@ -182,7 +154,7 @@ impl HistoricalTradeDownloader {
                             .map(Duration::from_secs_f64)
                             .unwrap_or(delay);
 
-                        warn!(
+                        println!(
                             "Rate limited (429). Sleeping {:.1}s before retry {}/{}.",
                             sleep_for.as_secs_f64(),
                             attempt,
@@ -194,7 +166,7 @@ impl HistoricalTradeDownloader {
                     }
 
                     if status.is_server_error() {
-                        warn!(
+                        println!(
                             "Alpaca server error {}. Sleeping {:.1}s before retry {}/{}.",
                             status,
                             delay.as_secs_f64(),
@@ -210,7 +182,7 @@ impl HistoricalTradeDownloader {
                         if attempt == self.max_retries {
                             return Err(Box::new(err));
                         }
-                        warn!(
+                        println!(
                             "Request failed: {}. Sleeping {:.1}s before retry {}/{}.",
                             err,
                             delay.as_secs_f64(),
@@ -229,7 +201,7 @@ impl HistoricalTradeDownloader {
                     if attempt == self.max_retries {
                         return Err(Box::new(exc));
                     }
-                    warn!(
+                    println!(
                         "Request failed: {}. Sleeping {:.1}s before retry {}/{}.",
                         exc,
                         delay.as_secs_f64(),
@@ -295,7 +267,7 @@ impl HistoricalTradeDownloader {
             Ok(content) => match serde_json::from_str::<CompletedDaysState>(&content) {
                 Ok(payload) => payload.completed_days.into_iter().collect(),
                 Err(_) => {
-                    warn!(
+                    println!(
                         "Could not parse state file {}; starting with empty state.",
                         path.display()
                     );
@@ -303,7 +275,7 @@ impl HistoricalTradeDownloader {
                 }
             },
             Err(_) => {
-                warn!(
+                println!(
                     "Could not read state file {}; starting with empty state.",
                     path.display()
                 );

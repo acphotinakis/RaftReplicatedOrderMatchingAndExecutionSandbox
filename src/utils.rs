@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, ParseError, TimeZone, Utc};
+use chrono::{DateTime, Datelike, Days, NaiveDate, NaiveDateTime, ParseError, TimeZone, Utc};
 
 /// Parses an ISO / RFC-3339 datetime string.
 ///
@@ -45,6 +45,34 @@ pub fn five_years_ago(value: DateTime<Utc>) -> DateTime<Utc> {
     let naive_dt = NaiveDateTime::new(naive_date, naive_time);
 
     Utc.from_utc_datetime(&naive_dt)
+}
+
+pub fn iter_daily_windows(
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
+) -> Vec<(String, String, NaiveDate)> {
+    let mut windows = Vec::new();
+    let mut current_day = start.date_naive();
+    let end_day = end.date_naive();
+
+    while current_day <= end_day {
+        let window_start = if current_day == start.date_naive() {
+            rfc3339(&start)
+        } else {
+            format!("{}T00:00:00Z", current_day.format("%Y-%m-%d"))
+        };
+
+        let window_end = if current_day == end.date_naive() {
+            rfc3339(&end)
+        } else {
+            end_of_day_rfc3339(current_day)
+        };
+
+        windows.push((window_start, window_end, current_day));
+        current_day = current_day.checked_add_days(Days::new(1)).unwrap();
+    }
+
+    windows
 }
 
 #[cfg(test)]

@@ -43,7 +43,7 @@ pub fn partition_csv_to_parquet(
     let schema = trade_schema();
 
     // Builders for typed Arrow columns
-    let mut timestamp_builder = TimestampNanosecondBuilder::new();
+    let mut timestamp_builder = TimestampNanosecondBuilder::new().with_timezone("UTC");
     let mut symbol_builder = StringBuilder::new();
     let mut price_builder = Float64Builder::new();
     let mut size_builder = UInt64Builder::new();

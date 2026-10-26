@@ -1,4 +1,5 @@
 pub mod alpaca;
+pub mod historical_quotes_downloader;
 pub mod historical_trade_downloader;
 pub mod model;
 pub mod partition_parquet;
