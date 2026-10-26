@@ -1,7 +1,6 @@
 use crate::market::model::{
     StockBarsQuery, StockBarsResponse, StockQuotesQuery, StockQuotesResponse,
 };
-use clap::builder::styling::Reset;
 use dotenvy::dotenv;
 use reqwest::header::{ACCEPT, HeaderMap, HeaderValue};
 use std::env;
@@ -9,7 +8,6 @@ use std::error::Error;
 
 pub async fn fetch_stock_bars(
     client: &reqwest::Client,
-    base_url: &str,
     query: &StockBarsQuery,
 ) -> Result<StockBarsResponse, Box<dyn Error>> {
     // Load environment variables from the .env file
@@ -23,6 +21,8 @@ pub async fn fetch_stock_bars(
         .expect("ALPACA_SECRET_KEY must be set in the environment or .env file");
 
     println!("ALPACA_SECRET_KEY and ALPACA_API_KEY keys loaded successfully!");
+
+    let base_url = "https://data.alpaca.markets/v2/stocks/bars";
 
     let mut headers = HeaderMap::new();
     headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
@@ -77,7 +77,6 @@ pub async fn fetch_stock_bars(
 
 pub async fn fetch_stock_quotes(
     client: &reqwest::Client,
-    base_url: &str,
     query: &StockQuotesQuery,
 ) -> Result<StockQuotesResponse, Box<dyn Error>> {
     // Load environment variables from the .env file
@@ -91,6 +90,8 @@ pub async fn fetch_stock_quotes(
         .expect("ALPACA_SECRET_KEY must be set in the environment or .env file");
 
     println!("ALPACA_SECRET_KEY and ALPACA_API_KEY keys loaded successfully!");
+
+    let base_url = "https://data.alpaca.markets/v2/stocks/quotes";
 
     let mut headers = HeaderMap::new();
     headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
@@ -135,7 +136,13 @@ pub async fn fetch_stock_quotes(
         for quote in bars.iter().take(2) {
             println!(
                 "  [{}] Bid: ${:.2} (size: {}) @ {} | Ask: ${:.2} (size: {}) @ {}",
-                quote.t, quote.bp, quote.bs, quote.bx, quote.ap, quote.as_, quote.ax
+                quote.timestamp,
+                quote.bid_price,
+                quote.bid_size,
+                quote.bid_exchange,
+                quote.ask_price,
+                quote.ask_size,
+                quote.ask_exchange
             );
         }
     }

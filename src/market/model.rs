@@ -84,25 +84,41 @@ pub enum Tape {
 /// Best Bid and Offer (BBO) quote information for a security.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StockQuote {
-    /// Ask price. 0 means no active ask.
-    pub ap: f64,
-    /// Ask size in shares.
-    #[serde(rename = "as")]
-    pub as_: u32,
-    /// Ask exchange code.
-    pub ax: String,
-    /// Bid price. 0 means no active bid.
-    pub bp: f64,
-    /// Bid size in shares.
-    pub bs: u32,
-    /// Bid exchange code.
-    pub bx: String,
-    /// Quote condition flags.
-    pub c: Vec<String>,
     /// Timestamp in RFC-3339 format with nanosecond precision.
-    pub t: String,
+    #[serde(rename = "t")]
+    pub timestamp: String,
+
+    /// Bid exchange code.
+    #[serde(rename = "bx")]
+    pub bid_exchange: String,
+
+    /// Bid price. 0 means no active bid.
+    #[serde(rename = "bp")]
+    pub bid_price: f64,
+
+    /// Bid size in shares.
+    #[serde(rename = "bs")]
+    pub bid_size: u32,
+
+    /// Ask exchange code.
+    #[serde(rename = "ax")]
+    pub ask_exchange: String,
+
+    /// Ask price. 0 means no active ask.
+    #[serde(rename = "ap")]
+    pub ask_price: f64,
+
+    /// Ask size in shares.
+    #[serde(rename = "as")] // Fixes the 'as_' keyword conflict natively!
+    pub ask_size: u32,
+
+    /// Quote condition flags.
+    #[serde(rename = "c")]
+    pub conditions: Vec<String>,
+
     /// Exchange tape.
-    pub z: Tape,
+    #[serde(rename = "z")]
+    pub tape: Tape,
 }
 
 /// Root response payload returned by `/v2/stocks/quotes`.
@@ -139,8 +155,7 @@ pub struct StockQuotesQuery {
 
 ///
 /// COMMON
-/// 
-
+///
 
 /// Chronological sorting option.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -161,4 +176,3 @@ pub enum StockFeed {
     Otc,
     Boats,
 }
-

@@ -1,42 +1,107 @@
-use clap::Parser;
+// In src/args.rs
+use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
-/// CLI tool to fetch historical stock bars from Alpaca Data API v2.
-#[derive(Parser, Debug)]
-#[command(name = "alpaca-bars", author, version, about)]
+#[derive(Debug, Parser)]
+#[command(name = "rromes", about = "Raft Replicated Sandbox Market Data CLI")]
 pub struct CliArgs {
-    /// Comma-separated list of stock symbols (e.g., SPY,AAPL)
-    #[arg(short, long, default_value = "SPY")]
-    pub symbols: String,
+    #[command(subcommand)]
+    pub command: MarketCommand,
+}
 
-    /// Timeframe for the bars (e.g., 1Min, 5Min, 1Hour, 1Day)
-    #[arg(short, long, default_value = "1Min")]
-    pub timeframe: String,
+#[derive(Debug, Subcommand)]
+pub enum MarketCommand {
+    List,
+    /// Fetch historical aggregate stock bars
+    Bars {
+        /// Comma-separated ticker symbols (e.g., AAPL,MSFT)
+        #[arg(short, long, default_value = "SPY")]
+        symbols: String,
 
-    /// Filter bars on or after this timestamp (ISO-8601 / RFC-3339)
-    #[arg(long, default_value = "2024-01-03T09:30:00-04:00")]
-    pub start: String,
+        /// Bar timeframe (e.g., 1Min, 5Min, 1Hour, 1Day)
+        #[arg(short, long, default_value = "1Min")]
+        timeframe: String,
 
-    /// Filter bars on or before this timestamp (ISO-8601 / RFC-3339)
-    #[arg(long, default_value = "2024-01-04T09:30:00-04:00")]
-    pub end: String,
+        /// Start timestamp in RFC-3339 format
+        #[arg(long, default_value = "2026-01-01")]
+        start: Option<String>,
 
-    /// Maximum number of bars to return (1-10000)
-    #[arg(short, long, default_value_t = 10)]
-    pub limit: u32,
+        /// End timestamp in RFC-3339 format
+        #[arg(long, default_value = "2026-10-19")]
+        end: Option<String>,
 
-    /// Corporate action adjustment (raw, split, dividend, all)
-    #[arg(short, long, default_value = "raw")]
-    pub adjustment: String,
+        /// Maximum data points to return
+        #[arg(short, long, default_value_t = 10)]
+        limit: u32,
 
-    /// Data feed source (sip, iex, otc)
-    #[arg(short, long, default_value = "sip")]
-    pub feed: String,
+        /// Data feed (sip, iex, otc)
+        #[arg(long, default_value = "sip")]
+        feed: String,
 
-    /// Chronological sort order (asc, desc)
-    #[arg(long, default_value = "asc")]
-    pub sort: String,
+        /// Sort direction (asc, desc)
+        #[arg(long, default_value = "asc")]
+        sort: String,
+    },
 
-    /// Pagination page token (optional)
-    #[arg(long)]
-    pub page_token: Option<String>,
+    /// Fetch historical top-of-book stock quotes
+    Quotes {
+        /// Comma-separated ticker symbols (e.g., AAPL,MSFT)
+        #[arg(short, long, default_value = "AAPL,MSFT")]
+        symbols: String,
+
+        /// Start timestamp in RFC-3339 format
+        #[arg(long)]
+        start: Option<String>,
+
+        /// End timestamp in RFC-3339 format
+        #[arg(long)]
+        end: Option<String>,
+
+        /// Maximum data points to return
+        #[arg(short, long, default_value_t = 10)]
+        limit: u32,
+
+        /// Data feed (sip, iex, otc)
+        #[arg(long, default_value = "sip")]
+        feed: String,
+
+        /// Sort direction (asc, desc)
+        #[arg(long, default_value = "asc")]
+        sort: String,
+    },
+
+    /// Backfill and download historical trade data into CSV or partitioned Parquet
+    Trades {
+        /// Comma-separated symbols (e.g. SPY,AAPL)
+        #[arg(long, default_value = "SPY")]
+        symbols: String,
+
+        /// Start timestamp in RFC-3339 format (defaults to 5 years ago if omitted)
+        #[arg(long)]
+        start: Option<String>,
+
+        /// End timestamp in RFC-3339 format (defaults to current time if omitted)
+        #[arg(long)]
+        end: Option<String>,
+
+        /// Stock feed (sip, iex, otc, boats)
+        #[arg(long, default_value = "sip")]
+        feed: String,
+
+        /// Directory for CSV output
+        #[arg(long, default_value = "data/raw/trades")]
+        output_dir: PathBuf,
+
+        /// Optional directory to partition into Parquet instead of monolithic CSV
+        #[arg(long)]
+        parquet_output_dir: Option<PathBuf>,
+
+        /// Trades per page (1-10000)
+        #[arg(long, default_value_t = 10000)]
+        limit: usize,
+
+        /// Requests per minute throttle
+        #[arg(long, default_value_t = 150)]
+        requests_per_minute: u32,
+    },
 }
